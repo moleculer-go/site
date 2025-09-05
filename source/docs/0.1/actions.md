@@ -30,21 +30,21 @@ The `params` is an `interface{}` that might be serialized in case of remote call
 **Call without params**
 
 ```go
-list := <-broker.Call("user.list", payload.Empty())
+list := <-bkr.Call("user.list", payload.Empty())
 fmt.Println("User list: ", list)
 ```
 
 **Call with params**
 
 ```go
-user := <-broker.Call("user.get", map[string]int{"id": 3})
+user := <-bkr.Call("user.get", map[string]int{"id": 3})
 fmt.Println("User: ", user)
 ```
 
 **Call with error handling**
 
 ```go
-res := <-broker.Call("posts.update", map[string]int{"id": 2, "name": nil})
+res := <-bkr.Call("posts.update", map[string]interface{}{"id": 2, "name": nil})
 if res.IsError() {
   fmt.Println("Unable to update Post!", res.Error())
 } else {

@@ -90,13 +90,17 @@ This example uses API Gateway service with default settings.
 You can access all services (including internal `$node.`) via `http://localhost:3000/`
 
 ```go
-const { ServiceBroker } = require("moleculer");
-const ApiService = ...
+import (
+    "github.com/moleculer-go/moleculer"
+    "github.com/moleculer-go/moleculer/broker"
+    "github.com/moleculer-go/gateway"
+)
 
-const broker = new ServiceBroker();
+bkr := broker.New(&moleculer.Config{})
 
 // Load API Gateway
-broker.createService(ApiService);
+gatewaySvc := &gateway.HttpService{}
+bkr.Publish(gatewaySvc)
 
 // Start server
 broker.start();

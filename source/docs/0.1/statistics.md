@@ -2,13 +2,9 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 Moleculer has a statistics module that collects and aggregates the count & latency info of the requests.
 You can enable it in the [broker options](broker.html#Broker-options) with `statistics: true`.

@@ -2,26 +2,26 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 Transporter needs a serializer module which serializes & deserializes the transferred packets.
 
 **Example**
 
-```js
-const { ServiceBroker } = require("moleculer");
+```go
+import (
+    "github.com/moleculer-go/moleculer"
+    "github.com/moleculer-go/moleculer/broker"
+    "github.com/moleculer-go/moleculer/transit/nats"
+)
 
-const broker = new ServiceBroker({
-    nodeID: "server-1",
-    transporter: "NATS",
-    serializer: "ProtoBuf"
-});
+bkr := broker.New(&moleculer.Config{
+    NodeID: "server-1",
+    Transit: nats.NewNatsTransit(),
+    Serializer: "JSON", // Default serializer
+})
 ```
 
 ## Built-in serializers
@@ -30,10 +30,10 @@ const broker = new ServiceBroker({
 
 This is the built-in default serializer. It serializes the packets to JSON string and deserializes the received data to packet.
 
-```js
-const broker = new ServiceBroker({
-    // serializer: "JSON" // don't need to set, because it is the default
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    // Serializer: "JSON" // don't need to set, because it is the default
+})
 ```
 
 ### Avro serializer

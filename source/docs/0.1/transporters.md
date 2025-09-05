@@ -2,13 +2,9 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 Transporter is an important module if you are running services on multiple nodes. Transporter communicates with other nodes. It transfers events, calls requests and processes responses ...etc. If a service runs on multiple instances on different nodes, the requests will be load-balanced among live nodes.
 
@@ -28,76 +24,71 @@ It means, you don't have to configure any transporter, just start the brokers/no
 
 **Use TCP transporter with default options**
 
-```js
-const broker = new ServiceBroker({
-    transporter: "TCP"
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    Transporter: "TCP",
+})
 ```
 
 **All TCP transporter options with default values**
 
-```js
-const broker = new ServiceBroker({
-    logger: true,
-    transporter: {
-        type: "TCP",
-        options: {
-            // Enable UDP discovery
-            udpDiscovery: true,
-            // Reusing UDP server socket
-            udpReuseAddr: true,
+```go
+bkr := broker.New(&moleculer.Config{
+    LogLevel: "info",
+    Transporter: "TCP",
+    TCPOptions: map[string]interface{}{
+        // Enable UDP discovery
+        "UdpDiscovery": true,
+        // Reusing UDP server socket
+        "UdpReuseAddr": true,
 
-            // UDP port
-            udpPort: 4445,
-            // UDP bind address (if null, bind on all interfaces)
-            udpBindAddress: null,
-            // UDP sending period (seconds)
-            udpPeriod: 30,
+        // UDP port
+        "UdpPort": 4445,
+        // UDP bind address (if empty, bind on all interfaces)
+        "UdpBindAddress": "",
+        // UDP sending period (seconds)
+        "UdpPeriod": 30 * time.Second,
 
-            // Multicast address.
-            udpMulticast: "239.0.0.0",
-            // Multicast TTL setting
-            udpMulticastTTL: 1,
+        // Multicast address.
+        "UdpMulticast": "239.0.0.0",
+        // Multicast TTL setting
+        "UdpMulticastTTL": 1,
 
-            // Send broadcast (Boolean, String, Array<String>)
-            udpBroadcast: false,
+        // Send broadcast (Boolean, String, Array<String>)
+        "UdpBroadcast": []string{},
 
-            // TCP server port. Null or 0 means random port
-            port: null,
-            // Static remote nodes address list (when UDP discovery is not available)
-            urls: null,
-            // Use hostname as preffered connection address
-            useHostname: true,
+        // TCP server port. 0 means random port
+        "Port": 0,
+        // Static remote nodes address list (when UDP discovery is not available)
+        "Urls": []string{},
+        // Use hostname as preferred connection address
+        "UseHostname": true,
 
-            // Gossip sending period in seconds
-            gossipPeriod: 2,
-            // Maximum enabled outgoing connections. If reach, close the old connections
-            maxConnections: 32,
-            // Maximum TCP packet size
-            maxPacketSize: 1 * 1024 * 1024
-        }
-    }
-});
+        // Gossip sending period in seconds
+        "GossipPeriod": 2,
+        // Maximum enabled outgoing connections. If reach, close the old connections
+        "MaxConnections": 32,
+        // Maximum TCP packet size
+        "MaxPacketSize": 1 * 1024 * 1024,
+    },
+})
 ```
 
 **TCP transporter with static endpoint list**
 
-```js
-const broker = new ServiceBroker({
-    nodeID: "node-1",
-    logger: true,
-    transporter: {
-        type: "TCP",
-        options: {
-            udpDiscovery: false,
-            urls: [
-                "172.17.0.1:6000/node-1",
-                "172.17.0.2:6000/node-2",
-                "172.17.0.3:6000/node-3"
-            ]
-        }
-    }
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    LogLevel: "info",
+    Transporter: "TCP",
+    TCPOptions: map[string]interface{}{
+        "UdpDiscovery": false,
+        "Urls": []string{
+            "172.17.0.1:6000/node-1",
+            "172.17.0.2:6000/node-2",
+            "172.17.0.3:6000/node-3",
+        },
+    },
+})
 ```
 
 _You don't need to set `port` because it find & parse the self TCP port from URL list._
@@ -105,30 +96,27 @@ _You don't need to set `port` because it find & parse the self TCP port from URL
 **TCP transporter with shorthand static endpoint list**
 It needs to start with `tcp://`.
 
-```js
-const broker = new ServiceBroker({
-    nodeID: "node-1",
-    transporter:
-        "tcp://172.17.0.1:6000/node-1,172.17.0.2:6000/node-2,172.17.0.3:6000/node-3"
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    Transporter: "tcp://172.17.0.1:6000/node-1,172.17.0.2:6000/node-2,172.17.0.3:6000/node-3",
+})
 ```
 
 **TCP transporter with static endpoint list file**
 
-```js
-const broker = new ServiceBroker({
-    nodeID: "node-1",
-    transporter: "file://./nodes.json"
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    Transporter: "file://./nodes.json",
+})
 ```
 
-```js
+```json
 // nodes.json
 [
     "127.0.0.1:6001/client-1",
     "127.0.0.1:7001/server-1",
     "127.0.0.1:7002/server-2"
-];
+]
 ```
 
 {% note info Serviceless node %}
@@ -141,188 +129,117 @@ Built-in transporter for [NATS](http://nats.io/).
 
 > NATS Server is a simple, high performance open source messaging system for cloud-native applications, IoT messaging, and microservices architectures.
 
-```js
-let { ServiceBroker } = require("moleculer");
+```go
+import (
+    "github.com/moleculer-go/moleculer"
+    "github.com/moleculer-go/moleculer/broker"
+)
 
-const broker = new ServiceBroker({
-    nodeID: "server-1",
-    transporter: "nats://nats.server:4222"
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "nats://nats.server:4222",
+})
 ```
 
 {% note info Dependencies %}
-To use this transporter install the `nats` module with `npm install nats --save` command.
+To use this transporter, the NATS Go client is automatically included as a dependency.
 {% endnote %}
 
 #### Examples
 
-```js
+```go
 // Connect to 'nats://localhost:4222'
-const broker = new ServiceBroker({
-    transporter: "NATS"
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "NATS",
+})
 
 // Connect to a remote NATS server
-const broker = new ServiceBroker({
-    transporter: "nats://nats-server:4222"
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "nats://nats-server:4222",
+})
 
 // Connect with options
-const broker = new ServiceBroker({
-    transporter: {
-        type: "NATS",
-        options: {
-            url: "nats://localhost:4222"
-            user: "admin",
-            pass: "1234"
-        }
-    }
-});
-
-// Connect with TLS
-const broker = new ServiceBroker({
-    transporter: {
-        type: "NATS",
-        options: {
-            url: "nats://localhost:4222"
-            // More info: https://github.com/nats-io/node-nats#tls
-            tls: {
-                key: fs.readFileSync('./client-key.pem'),
-                cert: fs.readFileSync('./client-cert.pem'),
-                ca: [ fs.readFileSync('./ca.pem') ]
-            }
-        }
-    }
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "NATS",
+    // Additional NATS options can be configured through the transporter factory
+})
 ```
 
 ### Redis Transporter ![Stable transporter](https://img.shields.io/badge/status-stable-green.svg)
 
 Built-in transporter for [Redis](http://redis.io/).
 
-```js
-let { ServiceBroker } = require("moleculer");
+```go
+import (
+    "github.com/moleculer-go/moleculer"
+    "github.com/moleculer-go/moleculer/broker"
+)
 
-const broker = new ServiceBroker({
-    nodeID: "server-1",
-    transporter: "redis://redis.server:6379"
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "redis://redis.server:6379",
+})
 ```
 
 {% note info Dependencies %}
-To use this transporter install the `ioredis` module with `npm install ioredis --save` command.
+To use this transporter, the Redis Go client is automatically included as a dependency.
 {% endnote %}
 
 #### Examples
 
-```js
+```go
 // Connect with default settings
-const broker = new ServiceBroker({
-    transporter: "Redis"
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "Redis",
+})
 
 // Connect with connection string
-const broker = new ServiceBroker({
-    transporter: "redis://localhost:6379"
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "redis://localhost:6379",
+})
 
 // Connect with options
-const broker = new ServiceBroker({
-    transporter: {
-        type: "Redis",
-        options: {
-            host: "redis-server",
-            db: 0
-        }
-    }
-});
-```
-
-### MQTT Transporter ![Stable transporter](https://img.shields.io/badge/status-stable-green.svg)
-
-Built-in transporter for [MQTT](http://mqtt.org/) protocol _(e.g.: [Mosquitto](https://mosquitto.org/))_.
-
-```js
-let { ServiceBroker } = require("moleculer");
-
-const broker = new ServiceBroker({
-    nodeID: "server-1",
-    transporter: "mqtt://mqtt-server:1883"
-});
-```
-
-{% note info Dependencies %}
-To use this transporter install the `mqtt` module with `npm install mqtt --save` command.
-{% endnote %}
-
-#### Examples
-
-```js
-// Connect with default settings
-const broker = new ServiceBroker({
-    transporter: "MQTT"
-});
-
-// Connect with connection string
-const broker = new ServiceBroker({
-    transporter: "mqtt://mqtt-server:1883"
-});
-
-// Connect with options
-const broker = new ServiceBroker({
-    transporter: {
-        type: "MQTT",
-        options: {
-            host: "mqtt-server",
-            port: 1883
-        }
-    }
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "Redis",
+    // Additional Redis options can be configured through the transporter factory
+})
 ```
 
 ### AMQP Transporter ![Stable transporter](https://img.shields.io/badge/status-stable-green.svg)
 
 Built-in transporter for [AMQP](https://www.amqp.org/) protocol _(e.g.: [RabbitMQ](https://www.rabbitmq.com/))_.
 
-```js
-let { ServiceBroker } = require("moleculer");
+```go
+import (
+    "github.com/moleculer-go/moleculer"
+    "github.com/moleculer-go/moleculer/broker"
+)
 
-const broker = new ServiceBroker({
-    nodeID: "server-1",
-    transporter: "amqp://rabbitmq-server:5672"
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "amqp://rabbitmq-server:5672",
+})
 ```
 
 {% note info Dependencies %}
-To use this transporter install the `amqplib` module with `npm install amqplib --save` command.
+To use this transporter, the AMQP Go client is automatically included as a dependency.
 {% endnote %}
 
-#### Transporter options
+#### Examples
 
-You can pass options to `amqp.connect()` method.
-
-```js
+```go
 // Connect to 'amqp://guest:guest@localhost:5672'
-const broker = new ServiceBroker({
-    transporter: "AMQP"
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "AMQP",
+})
 
 // Connect to a remote server
-const broker = new ServiceBroker({
-    transporter: "amqp://rabbitmq-server:5672"
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "amqp://rabbitmq-server:5672",
+})
 
 // Connect to a remote server with options & credentials
-const broker = new ServiceBroker({
-    transporter: {
-        type: "AMQP",
-        options: {
-            url: "amqp://user:pass@rabbitmq-server:5672",
-            eventTimeToLive: 5000,
-            prefetch: 1
-        }
-    }
-});
+bkr := broker.New(&moleculer.Config{
+    Transporter: "amqp://user:pass@rabbitmq-server:5672",
+    // Additional AMQP options can be configured through the transporter factory
+})
 ```
 
 ### Kafka Transporter ![Experimental transporter](https://img.shields.io/badge/status-experimental-orange.svg)
@@ -332,122 +249,58 @@ Built-in transporter for [Kafka](https://kafka.apache.org/). It is a very simple
 > Please note, it is an **experimental** transporter. **Do not use it in production yet!**
 
 {% note info Dependencies %}
-To use this transporter install the `kafka-node` module with `npm install kafka-node --save` command.
+To use this transporter, the Kafka Go client is automatically included as a dependency.
 {% endnote %}
 
-**Connect to Zookeeper**
+**Connect to Kafka**
 
-```js
-const broker = new ServiceBroker({
-    logger: true,
-    transporter: "kafka://192.168.51.29:2181"
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    LogLevel: "info",
+    Transporter: "kafka://192.168.51.29:9092",
+})
 ```
 
-**Connect to Zookeeper with custom options**
+**Connect to Kafka with custom options**
 
-```js
-const broker = new ServiceBroker({
-    logger: true,
-    transporter: {
-        type: "kafka",
-        options: {
-            host: "192.168.51.29:2181",
-
-            // KafkaClient options. More info: https://github.com/SOHU-Co/kafka-node#clientconnectionstring-clientid-zkoptions-noackbatchoptions-ssloptions
-            client: {
-                zkOptions: undefined,
-                noAckBatchOptions: undefined,
-                sslOptions: undefined
-            },
-
-            // KafkaProducer options. More info: https://github.com/SOHU-Co/kafka-node#producerclient-options-custompartitioner
-            producer: {},
-            customPartitioner: undefined,
-
-            // ConsumerGroup options. More info: https://github.com/SOHU-Co/kafka-node#consumergroupoptions-topics
-            consumer: {},
-
-            // Advanced options for `send`. More info: https://github.com/SOHU-Co/kafka-node#sendpayloads-cb
-            publish: {
-                partition: 0,
-                attributes: 0
-            }
-        }
-    }
-});
-```
-
-### NATS Streaming (STAN) Transporter ![Experimental transporter](https://img.shields.io/badge/status-experimental-orange.svg)
-
-Built-in transporter for [NATS Streaming](https://nats.io/documentation/streaming/nats-streaming-intro/). It is a very simple implementation. It transfers Moleculer packets to consumers via pub/sub. There are not implemented offset, replay...etc features.
-
-> Please note, it is an **experimental** transporter. **Do not use it in production yet!**
-
-```js
-let { ServiceBroker } = require("moleculer");
-
-const broker = new ServiceBroker({
-    nodeID: "server-1",
-    transporter: "stan://nats-streaming-server:4222"
-});
-```
-
-{% note info Dependencies %}
-To use this transporter install the `node-nats-streaming` module with `npm install node-nats-streaming --save` command.
-{% endnote %}
-
-#### Examples
-
-```js
-// Connect with default settings
-const broker = new ServiceBroker({
-    transporter: "STAN"
-});
-
-// Connect with connection string
-const broker = new ServiceBroker({
-    transporter: "stan://nats-streaming-server:4222"
-});
-
-// Connect with options
-const broker = new ServiceBroker({
-    transporter: {
-        type: "STAN",
-        options: {
-            url: "stan://127.0.0.1:4222",
-            clusterID: "my-cluster"
-        }
-    }
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    LogLevel: "info",
+    Transporter: "kafka://192.168.51.29:9092",
+    // Additional Kafka options can be configured through the transporter factory
+})
 ```
 
 ### Custom transporter
 
-You can also create your custom transporter module. We recommend to copy the source of [NatsTransporter](https://github.com/moleculerjs/moleculer/blob/master/src/transporters/nats.js) and implement the `connect`, `disconnect`, `subscribe` and `publish` methods.
+You can also create your custom transporter module. We recommend to copy the source of [NatsTransporter](https://github.com/moleculer-go/moleculer/blob/master/transit/nats/nats.go) and implement the `Connect`, `Disconnect`, `Subscribe` and `Publish` methods.
 
 #### Use custom transporter
 
-```js
-const { ServiceBroker } = require("moleculer");
-const MyAwesomeTransporter = require("./my-transporter");
+```go
+import (
+    "github.com/moleculer-go/moleculer"
+    "github.com/moleculer-go/moleculer/broker"
+)
 
-const broker = new ServiceBroker({
-    transporter: new MyAwesomeTransporter()
-});
+bkr := broker.New(&moleculer.Config{
+    TransporterFactory: func() interface{} {
+        return &MyAwesomeTransporter{}
+    },
+})
 ```
 
 ## Disabled balancer
 
-Some transporter server has built-in balancer solution. E.g.: RabbitMQ, NATS, NATS-Streaming. If you want to use the transporter balancer instead of Moleculer balancer, use the `disableBalancer` broker option.
+Some transporter server has built-in balancer solution. E.g.: RabbitMQ, NATS. If you want to use the transporter balancer instead of Moleculer balancer, use the `DisableBalancer` broker option.
 
 **Example**
 
-```js
-const broker = new ServiceBroker({
-    disableBalancer: true,
-    transporter: "nats://some-server:4222"
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    DisableBalancer: true,
+    Transporter: "nats://some-server:4222",
+})
 ```
 
 {% note info Please note %}

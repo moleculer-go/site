@@ -2,13 +2,9 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 _Added in: v0.7.6_
 
@@ -21,16 +17,19 @@ If you enable it, every service call will be protected by a built-in circuit bre
 
 **Enable it in the broker options**
 
-```js
-const broker = new ServiceBroker({
-    circuitBreaker: {
-        enabled: true,
-        maxFailures: 5,
-        halfOpenTime: 10 * 1000,
-        failureOnTimeout: true,
-        failureOnReject: true
-    }
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    RetryPolicy: &moleculer.RetryPolicy{
+        Enabled:           true,
+        Retries:           5,
+        Delay:             1000,
+        MaxDelay:          10000,
+        Factor:            2,
+        Check: func(err error) bool {
+            return err != nil
+        },
+    },
+})
 ```
 
 ## Settings

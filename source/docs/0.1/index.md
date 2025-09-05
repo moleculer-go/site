@@ -68,7 +68,11 @@ Development is `complete` - Documentation is `in-progress` and benchmark is also
 -   Service registry & dynamic service discovery
 -   Versioned services
 -   Middlewares
--   NATS Streaming Transporter
+-   TCP Transporter (with UDP discovery)
+-   NATS Transporter
+-   Redis Transporter
+-   AMQP Transporter
+-   Kafka Transporter
 -   JSON Serializer
 -   Examples :)
 
@@ -104,15 +108,17 @@ $ go get github.com/moleculer-go/moleculer
 
 ```bash
 
-# simple moleculer db example with memory adaptor
-$ go run github.com/moleculer-go/store/examples/users
+# simple math service example
+$ go run github.com/moleculer-go/moleculer/examples/standalone
 
-# simple moleculer db example with Mongo adaptor
-$ go run github.com/moleculer-go/store/examples/usersMongo
+# math service with events
+$ go run github.com/moleculer-go/moleculer/examples/math
 
-# complex moleculer db example with population of fields by other services
-$ go run github.com/moleculer-go/store/examples/populates
+# Redis transporter example
+$ go run github.com/moleculer-go/moleculer/examples/redis_transporter
 
+# AMQP transporter example
+$ go run github.com/moleculer-go/moleculer/examples/amqp_transporter
 
 ```
 

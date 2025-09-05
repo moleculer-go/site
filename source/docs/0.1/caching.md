@@ -2,57 +2,54 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 Moleculer has a built-in caching solution to cache responses of service actions. To enable it, set a `cacher` type in [broker option](broker.html#Broker-options) and set the `cache: true` in [action definition](services.html#Actions) what you want to cache.
 
 **Cached action example**
 
-```js
-const { ServiceBroker } = require("moleculer");
+```go
+import (
+    "github.com/moleculer-go/moleculer"
+    "github.com/moleculer-go/moleculer/broker"
+)
 
 // Create broker
-const broker = new ServiceBroker({
-    cacher: "Memory"
-});
+bkr := broker.New(&moleculer.Config{
+    Cacher: "Memory",
+})
 
 // Create a service
-broker.createService({
-    name: "users",
-    actions: {
-        list: {
+userService := moleculer.ServiceSchema{
+    Name: "users",
+    Actions: []moleculer.Action{
+        {
+            Name: "list",
             // Enable caching to this action
-            cache: true,
-            handler(ctx) {
-                this.logger.info("Handler called!");
-                return [{ id: 1, name: "John" }, { id: 2, name: "Jane" }];
-            }
-        }
-    }
-});
+            Cache: true,
+            Handler: func(ctx moleculer.Context, params moleculer.Payload) interface{} {
+                ctx.Logger().Info("Handler called!")
+                return []map[string]interface{}{
+                    {"id": 1, "name": "John"},
+                    {"id": 2, "name": "Jane"},
+                }
+            },
+        },
+    },
+}
 
-broker
-    .start()
-    .then(() => {
-        // Will be called the handler, because the cache is empty
-        return broker
-            .call("users.list")
-            .then(res => broker.logger.info("Users count:", res.length));
-    })
-    .then(() => {
-        // Return from cache, handler won't be called
-        return broker
-            .call("users.list")
-            .then(res =>
-                broker.logger.info("Users count from cache:", res.length)
-            );
-    });
+bkr.Publish(userService)
+bkr.Start()
+
+// Will be called the handler, because the cache is empty
+result := <-bkr.Call("users.list", nil)
+bkr.Logger().Info("Users count:", result.Len())
+
+// Return from cache, handler won't be called
+result = <-bkr.Call("users.list", nil)
+bkr.Logger().Info("Users count from cache:", result.Len())
 ```
 
 **Console messages:**

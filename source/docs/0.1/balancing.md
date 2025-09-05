@@ -2,13 +2,9 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 Moleculer has several built-in load balancing strategies. If services have multiple running instances, ServiceRegistry uses these strategies to select a node from all available nodes.
 
@@ -18,12 +14,12 @@ To configure strategy, set `strategy` broker options under `registry` property. 
 
 **Configure balancing strategy**
 
-```js
-const broker = new ServiceBroker({
-    registry: {
-        strategy: "Random"
-    }
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    StrategyFactory: func() interface{} {
+        return &strategy.RandomStrategy{}
+    },
+})
 ```
 
 ### RoundRobin strategy
@@ -32,12 +28,12 @@ This strategy selects a node based on [round-robin](https://en.wikipedia.org/wik
 
 **Usage**
 
-```js
-const broker = new ServiceBroker({
-    registry: {
-        strategy: "RoundRobin"
-    }
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    StrategyFactory: func() interface{} {
+        return &strategy.RoundRobinStrategy{}
+    },
+})
 ```
 
 ### Random strategy
@@ -46,12 +42,12 @@ This strategy selects a node randomly.
 
 **Usage**
 
-```js
-const broker = new ServiceBroker({
-    registry: {
-        strategy: "Random"
-    }
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    StrategyFactory: func() interface{} {
+        return &strategy.RandomStrategy{}
+    },
+})
 ```
 
 ### CPU usage-based strategy
@@ -60,12 +56,12 @@ This strategy selects a node which has the lowest CPU usage. Due to the node lis
 
 **Usage**
 
-```js
-const broker = new ServiceBroker({
-    registry: {
-        strategy: "CpuUsage"
-    }
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    StrategyFactory: func() interface{} {
+        return &strategy.CpuUsageStrategy{}
+    },
+})
 ```
 
 **Strategy options**
@@ -77,16 +73,15 @@ const broker = new ServiceBroker({
 
 **Usage with custom options**
 
-```js
-const broker = new ServiceBroker({
-    registry: {
-        strategy: "CpuUsage",
-        strategyOptions: {
-            sampleCount: 3,
-            lowCpuUsage: 10
+```go
+bkr := broker.New(&moleculer.Config{
+    StrategyFactory: func() interface{} {
+        return &strategy.CpuUsageStrategy{
+            SampleCount: 3,
+            LowCpuUsage: 10,
         }
-    }
-});
+    },
+})
 ```
 
 ### Latency-based strategy
@@ -95,12 +90,12 @@ This strategy selects a node which has the lowest latency, measured by periodic 
 
 **Usage**
 
-```js
-const broker = new ServiceBroker({
-    registry: {
-        strategy: "Latency"
-    }
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    StrategyFactory: func() interface{} {
+        return &strategy.LatencyStrategy{}
+    },
+})
 ```
 
 **Strategy options**
@@ -114,47 +109,43 @@ const broker = new ServiceBroker({
 
 **Usage with custom options**
 
-```js
-const broker = new ServiceBroker({
-    registry: {
-        strategy: "Latency",
-        strategyOptions: {
-            sampleCount: 15,
-            lowLatency: 20,
-            collectCount: 10,
-            pingInterval: 15
+```go
+bkr := broker.New(&moleculer.Config{
+    StrategyFactory: func() interface{} {
+        return &strategy.LatencyStrategy{
+            SampleCount:  15,
+            LowLatency:   20,
+            CollectCount: 10,
+            PingInterval: 15,
         }
-    }
-});
+    },
+})
 ```
 
 ## Custom strategy
 
-Custom strategy can be created. We recommend to copy the source of [RandomStrategy](https://github.com/moleculer-go/moleculer/blob/master/src/strategies/random.js) and implement the `select` method.
+Custom strategy can be created. We recommend to copy the source of [RandomStrategy](https://github.com/moleculer-go/moleculer/blob/master/strategy/random.go) and implement the `Select` method.
 
 ### Create custom strategy
 
-```js
-const BaseStrategy = require("moleculer").Strategies.Base;
-
-class MyStrategy extends BaseStrategy {
-    select(list) {
-        /*...*/
-    }
+```go
+type MyStrategy struct {
+    // Add any custom fields here
 }
 
-module.exports = MyStrategy;
+func (s *MyStrategy) Select(list []Node) Node {
+    // Implement your selection logic here
+    return list[0] // Example: return first node
+}
+
 ```
 
 ### Use custom strategy
 
-```js
-const { ServiceBroker } = require("moleculer");
-const MyStrategy = require("./my-strategy");
-
-const broker = new ServiceBroker({
-    registry: {
-        strategy: MyStrategy
-    }
-});
+```go
+bkr := broker.New(&moleculer.Config{
+    StrategyFactory: func() interface{} {
+        return &MyStrategy{}
+    },
+})
 ```

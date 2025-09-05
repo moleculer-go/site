@@ -18,7 +18,7 @@ var mathService = moleculer.ServiceSchema{
   Actions: []moleculer.Action{
     {
       Name:  "add",
-      Handler: func addAction(ctx moleculer.Context, params moleculer.Payload) interface{} {
+      Handler: func(ctx moleculer.Context, params moleculer.Payload) interface{} {
         return params.Get("a").Int() + params.Get("b").Int()
       },
     },
@@ -59,12 +59,10 @@ moleculer.ServiceSchema{
 }
 ```
 
-<img src="assets/under_construction.png" width=150/> `version as prefix on action names is not implemented yet.`
-
 To call this `find` action on version `2` service:
 
 ```go
-broker.Call("v2.posts.find", nil);
+result := <-broker.Call("v2.posts.find", payload.Empty())
 ```
 
 {% note info REST call %}
@@ -77,13 +75,14 @@ The `settings` property is a key-value store, where you can store every settings
 
 ```go
 var instanceSettings map[string]interface{}
+
 moleculer.ServiceSchema{
  Name: "mailer",
  Settings: map[string]interface{}{
   "transport": "mailgun",
  },
  Created: func(s moleculer.ServiceSchema, l *log.Entry) {
-  instanceSettings = svc.Settings
+  instanceSettings = s.Settings
  },
  Actions: []moleculer.Action{
   {
@@ -92,9 +91,10 @@ moleculer.ServiceSchema{
     if instanceSettings["transport"] == "mailgun" {
      //.. do something
     }
+    return nil
    },
   },
- }
+ },
 }
 ```
 
@@ -105,32 +105,41 @@ moleculer.ServiceSchema{
 Mixins are a flexible way to distribute reusable functionalities for Moleculer services. Moleculer will merges the mixins actions, lifecycle methods with the service schema.
 In this way you can extend services and resuse functionality. When a service uses mixins, all actions, settings, and lifecycle methods are "mixed" into the service.
 
-**Example using `moleculer-go/store`**
+**Example using mixins**
 
 ```go
+var userMixin = moleculer.Mixin{
+  Name: "userMixin",
+  Actions: []moleculer.Action{
+    {
+      Name: "get",
+      Handler: func(ctx moleculer.Context, params moleculer.Payload) interface{} {
+        // Get user logic here
+        return map[string]interface{}{"id": params.Get("id").String()}
+      },
+    },
+  },
+}
+
 moleculer.ServiceSchema{
   Name: "users",
   Settings: map[string]interface{}{
-    "fields":    []string{"_id", "username", "name"},
-    "populates": map[string]interface{}{"friends": "users.get"},
+    "fields": []string{"_id", "username", "name"},
   },
-  Mixins: []moleculer.Mixin{
-    store.Mixin(&mongo.MongoAdapter{
-      MongoURL:   "mongodb://localhost:27017",
-      Collection: "users",
-      Database:   "test",
-      Timeout:    time.Second * 5,
-   })},
+  Mixins: []moleculer.Mixin{userMixin},
   Actions: []moleculer.Action{
-  {
-   Name:  "notify",
-   Handler:...,
+    {
+      Name: "notify",
+      Handler: func(ctx moleculer.Context, params moleculer.Payload) interface{} {
+        // Notify logic here
+        return nil
+      },
+    },
   },
- }
 }
 ```
 
-The above example creates an `users` service which inherits all from `store.Mixin`, overwrite the fields and populates setting and expose a new action called `notify`.
+The above example creates a `users` service which inherits all actions from `userMixin` and exposes a new action called `notify`.
 
 ### Merge algorithm
 
@@ -164,7 +173,7 @@ moleculer.ServiceSchema{
   Actions: []moleculer.Action{
     {
       Name:  "add",
-      Handler: func addAction(ctx moleculer.Context, params moleculer.Payload) interface{} {
+      Handler: func(ctx moleculer.Context, params moleculer.Payload) interface{} {
         return params.Get("a").Int() + params.Get("b").Int()
       },
     },
@@ -181,11 +190,11 @@ moleculer.ServiceSchema{
 You can call the above actions as
 
 ```go
-res := <-bkr.Call("math.add", map[string]int{ "a": 5, "b": 7 });
-res := <-bkr.Call("math.mult", map[string]int{ "a": 10, "b": 31 });
+res := <-bkr.Call("math.add", map[string]int{ "a": 5, "b": 7 })
+res := <-bkr.Call("math.sub", map[string]int{ "a": 10, "b": 31 })
 ```
 
-Inside actions, you can call other nested actions in other services with `ctx.call` method. It is an alias to `broker.call`, but it sets itself as parent context for tracing purposes.
+Inside actions, you can call other nested actions in other services with `ctx.Call` method. It is an alias to `broker.Call`, but it sets itself as parent context for tracing purposes.
 
 ```go
 moleculer.ServiceSchema{
@@ -193,7 +202,7 @@ moleculer.ServiceSchema{
   Actions: []moleculer.Action{
     {
       Name:  "get",
-      Handler: func addAction(ctx moleculer.Context, params moleculer.Payload) interface{} {
+      Handler: func(ctx moleculer.Context, params moleculer.Payload) interface{} {
         // Find a post by ID
         postId := params.Get("id").String()
         posts := <-ctx.Call("posts.find", map[string]interface{}{
@@ -204,7 +213,7 @@ moleculer.ServiceSchema{
         post := posts.First()
         // Populate the post.author field through "users" service
         // Call the "users.get" action with author ID
-        users := <-ctx.call("users.find", map[string]interface{}{
+        users := <-ctx.Call("users.find", map[string]interface{}{
             "query": map[string]interface{}{
                 "id": post.Get("authorId"),
             },
@@ -240,7 +249,7 @@ moleculer.ServiceSchema{
       // Subscribe to a local event
       Name:  "$node.connected",
       Handler: func(c moleculer.Context, p moleculer.Payload) {
-        c.Logger().Info("Node: ", p.Get("node").Get("id").String()," is connected!")
+        c.Logger().Info("Node: ", p.Get("node").Get("id").String(), " is connected!")
       },
     },
   },
@@ -280,17 +289,17 @@ import (
 moleculer.ServiceSchema{
   Name: "coffeMachine",
 
-  Created: func(moleculer.ServiceSchema, *log.Entry) {
-    // Fired when is published with `broker.Piblish()`
+  Created: func(s moleculer.ServiceSchema, l *log.Entry) {
+    // Fired when is published with `broker.Publish()`
   },
 
-  Started: func(c BrokerContext, s ServiceSchema) {
+  Started: func(c moleculer.BrokerContext, s moleculer.ServiceSchema) {
     // Fired when broker starts this service (in `broker.Start()`)
-  }
+  },
 
-  Stopped: func(c BrokerContext, s ServiceSchema) {
+  Stopped: func(c moleculer.BrokerContext, s moleculer.ServiceSchema) {
     // Fired when broker stops this service (in `broker.Stop()`)
-  }
+  },
 }
 ```
 
@@ -302,11 +311,11 @@ If your service depends on other services, use the `Dependencies` property in th
 moleculer.ServiceSchema{
   Name: "coffeMachine",
   Dependencies: []string{"users", "comments"},
-  Started: func(c BrokerContext, s ServiceSchema) {
-    c.Logger().info("It will be called after all dependent services are available.");
-    users := <-c.Call("users.list", payload.Empty());
+  Started: func(c moleculer.BrokerContext, s moleculer.ServiceSchema) {
+    c.Logger().Info("It will be called after all dependent services are available.")
+    users := <-c.Call("users.list", payload.Empty())
     //...
-  }
+  },
 }
 ```
 
@@ -318,17 +327,17 @@ The `Started` service handler is called once the `users` and `comments` services
 bkr := broker.New(&moleculer.Config{})
 bkr.Publish(moleculer.ServiceSchema{
   Name: "math",
-    Actions: []moleculer.Action{{
+  Actions: []moleculer.Action{{
     Name: "add",
     Handler: func(context moleculer.Context, params moleculer.Payload) interface{} {
-  }}},
+      return params.Get("a").Int() + params.Get("b").Int()
+    },
+  }},
 })
 bkr.Start()
 ```
 
-## Struts
-
-`struts`?
+## Structs
 
 ### Can I craft my services using a simple struct? Or even reuse an existing objects?
 
@@ -341,7 +350,7 @@ And that is it.
 type myOwnType struct {
     //some crazy stuff
 }
-func (svc HttpService) Name() string {
+func (svc myOwnType) Name() string {
   return "nameOfYourService"
 }
 ```
@@ -349,38 +358,34 @@ func (svc HttpService) Name() string {
 Beyond that there are the conventions that you need to follow to expose useful actions and listen to events.
 
 ```go
-//...
 type HttpService struct {
   Settings map[string]interface{}
-  Mixins   []GatewayMixin
-  settings      map[string]interface{}
-  server        *http.Server
-  router        *mux.Router
-  actionsRouter *mux.Router
+  settings map[string]interface{}
+  server   *http.Server
+  router   *mux.Router
 }
+
 // ⚙ You must have a name
 func (svc HttpService) Name() string {
   return "api"
 }
+
 // ⭐ You can also say what your dependencies are.  ⭐
 func (svc *HttpService) Dependencies() []string {
   return []string{"$node"}
 }
+
 // ⭐ You can have a Started handler also!  ⭐
 func (svc *HttpService) Started(context moleculer.BrokerContext, schema moleculer.ServiceSchema) {
-  svc.settings = service.MergeSettings(defaultSettings, svc.Settings)
-  address := svc.getAddress()
+  svc.settings = svc.Settings
+  address := ":3000"
   svc.server = &http.Server{Addr: address}
   svc.router = mux.NewRouter()
   svc.server.Handler = svc.router
-  for _, mixin := range svc.Mixins {
-    mixin.RouterStarting(context, svc.router)
-  }
-  svc.reveserProxy(context)
   go svc.startServer(context)
-  go populateActionsRouter(context.(moleculer.Context), svc.settings, svc.actionsRouter)
   context.Logger().Info("Gateway Started()")
 }
+
 // ⭐ You can have a Stopped handler also!  ⭐
 func (svc *HttpService) Stopped(context moleculer.BrokerContext, schema moleculer.ServiceSchema) {
   if svc.server != nil {
@@ -390,19 +395,21 @@ func (svc *HttpService) Stopped(context moleculer.BrokerContext, schema molecule
     }
   }
 }
+
 // ⭐ That is how you listen for events ! ⭐
 func (svc *HttpService) Events() []moleculer.Event {
   return []moleculer.Event{
     {
       Name: "$registry.service.added",
       Handler: func(c moleculer.Context, p moleculer.Payload) {
-        if svc.actionsRouter == nil {
-           return
-        }
-        go populateActionsRouter(c, svc.settings, svc.actionsRouter)
+        c.Logger().Info("Service added: ", p)
       },
     },
   }
+}
+
+func (svc *HttpService) startServer(context moleculer.BrokerContext) {
+  // Start HTTP server logic here
 }
 ```
 
@@ -414,6 +421,7 @@ import (
 
   "github.com/moleculer-go/moleculer"
   "github.com/moleculer-go/moleculer/broker"
+  "github.com/moleculer-go/moleculer/payload"
 )
 
 type MathService struct {
@@ -422,14 +430,17 @@ type MathService struct {
 func (s MathService) Name() string {
   return "math"
 }
+
 //  ⭐ You can have just the parameters in case you don't need the context ⭐
 func (s *MathService) Add(params moleculer.Payload) int {
   return params.Get("a").Int() + params.Get("b").Int()
 }
+
 // ⭐ You might just need the arguments, but to be able to call this actions the arguments needs to be passed as an array! ⭐
 func (s *MathService) Sub(a int, b int) int {
   return a - b
 }
+
 //  ⭐ You can also have an action that receive no parameters ⭐
 func (s *MathService) Inc() {
   //do magic!
@@ -444,15 +455,15 @@ func main() {
     "b": 130,
   })
   fmt.Println("result: ", result.Int())
-    //$ result: 140
-    result = <-bkr.Call("math.sub", []int{ // remember for action sub we need to wrap the argments in an array! look above
+  //$ result: 140
+  result = <-bkr.Call("math.sub", []int{ // remember for action sub we need to wrap the arguments in an array! look above
     50,
     20,
   })
   fmt.Println("result: ", result.Int())
-    //$ result: 30
-    <-bkr.Call("math.inc", payload.Empty())
-    bkr.Stop()
+  //$ result: 30
+  <-bkr.Call("math.inc", payload.Empty())
+  bkr.Stop()
 }
 ```
 
@@ -465,7 +476,7 @@ The `Broker` contains some internal services to check the node health or get som
 It lists all known nodes (including local node).
 
 ```go
-nodes := <-broker.Call("$node.list", payload.Empty())
+nodes := <-bkr.Call("$node.list", payload.Empty())
 ```
 
 **Parameters**
@@ -480,7 +491,7 @@ nodes := <-broker.Call("$node.list", payload.Empty())
 It lists all registered services (local & remote).
 
 ```go
-services := <-broker.Call("$node.services", payload.Empty())
+services := <-bkr.Call("$node.services", payload.Empty())
 ```
 
 **Parameters**
@@ -497,7 +508,7 @@ services := <-broker.Call("$node.services", payload.Empty())
 It lists all registered actions (local & remote).
 
 ```go
-actions := broker.Call("$node.actions", payload.Empty())
+actions := <-bkr.Call("$node.actions", payload.Empty())
 ```
 
 **Parameters**
@@ -514,7 +525,7 @@ actions := broker.Call("$node.actions", payload.Empty())
 It lists all event subscriptions.
 
 ```go
-events := <-broker.Call("$node.events", payload.New(map[string]bool{
+events := <-bkr.Call("$node.events", payload.New(map[string]bool{
   "onlyLocal": true,
 }))
 ```
@@ -536,5 +547,5 @@ Not Implemented yet!
 It returns the health info of local node (including process & OS information).
 
 ```go
-health := <-broker.Call("$node.health", payload.Empty())
+health := <-bkr.Call("$node.health", payload.Empty())
 ```

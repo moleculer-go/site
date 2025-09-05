@@ -2,32 +2,30 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 
 ## Dockerfile to run Moleculer services
 
 ```docker
-FROM node:8-alpine
+FROM golang:1.21-alpine AS builder
 
-ENV NODE_ENV=production
-
-RUN mkdir /app
 WORKDIR /app
-
-COPY package.json .
-
-RUN npm install --production
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
+RUN go build -o moleculer-service .
 
-CMD ["npm", "start"]
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+
+COPY --from=builder /app/moleculer-service .
+
+CMD ["./moleculer-service"]
 ```
 
 ## Docker Compose file to run Moleculer services with NATS & Traefik (load balancing the API Gateway)

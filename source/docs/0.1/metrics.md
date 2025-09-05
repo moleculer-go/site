@@ -2,13 +2,9 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 Moleculer has a built-in metrics feature. It can be enabled within the [broker options](broker.html#Broker-options) with `metrics: true` option.
 If it is enabled, the broker emits metrics events at every requests. You can subscribe to these events in your services and transfer them to your Tracer system (ZipKin, OpenTracing...etc).

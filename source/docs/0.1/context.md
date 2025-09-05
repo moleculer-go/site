@@ -2,13 +2,9 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 When you call an action, the broker creates a `Context` instance which contains all request information and passes it to the action handler as a single argument.
 
@@ -16,16 +12,12 @@ When you call an action, the broker creates a `Context` instance which contains 
 
 | Name               | Type            | Description                                                      |
 | ------------------ | --------------- | ---------------------------------------------------------------- |
-| `ctx.id`           | `String`        | Context ID                                                       |
-| `ctx.broker`       | `ServiceBroker` | Instance of the broker.                                          |
-| `ctx.action`       | `Object`        | Instance of action definition.                                   |
-| `ctx.nodeID`       | `String`        | Node ID.                                                         |
-| `ctx.requestID`    | `String`        | Request ID. If you make nested-calls, it will be the same ID.    |
-| `ctx.parentID`     | `String`        | Parent context ID (in nested-calls).                             |
-| `ctx.params`       | `Any`           | Request params. _Second argument from `broker.call`._            |
-| `ctx.meta`         | `Any`           | Request metadata. _It will be also transferred to nested-calls._ |
-| `ctx.callerNodeID` | `String`        | Caller Node ID if it is requested from a remote node.            |
-| `ctx.level`        | `Number`        | Request level (in nested-calls). The first level is `1`.         |
-| `ctx.call()`       | `Function`      | You can make a sub-call. Same arguments like `broker.call`       |
-| `ctx.emit()`       | `Function`      | Emit an event, like `broker.emit`                                |
-| `ctx.broadcast`    | `Function`      | Broadcast an event, like `broker.broadcast`                      |
+| `ctx.ID()`         | `string`        | Context ID                                                       |
+| `ctx.ActionName()` | `string`        | Name of the action being called.                                 |
+| `ctx.Caller()`     | `string`        | Caller service name.                                             |
+| `ctx.Payload()`    | `Payload`       | Request params wrapped in Payload.                               |
+| `ctx.Meta()`       | `Payload`       | Request metadata. _It will be also transferred to nested-calls._ |
+| `ctx.Call()`       | `Function`      | You can make a sub-call. Same arguments like `broker.Call`       |
+| `ctx.Emit()`       | `Function`      | Emit an event, like `broker.Emit`                                |
+| `ctx.Broadcast()`  | `Function`      | Broadcast an event, like `broker.Broadcast`                      |
+| `ctx.Logger()`     | `*log.Entry`    | Logger instance for this context.                                |

@@ -2,13 +2,9 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 Moleculer has some built-in `Error` to raise an error in services.
 
@@ -29,10 +25,31 @@ The base error class.
 
 **Example**
 
-```js
-const { MoleculerError } = require("moleculer").Errors;
+```go
+import "errors"
 
-throw new MoleculerError("Something happened", 501, "ERR_SOMETHING", { a: 5, nodeID: "node-666" }));
+// In Go, you can use standard error types or create custom errors
+err := errors.New("Something happened")
+// Or create a custom error with more context
+type MoleculerError struct {
+    Message string
+    Code    int
+    Type    string
+    Data    map[string]interface{}
+}
+
+func (e *MoleculerError) Error() string {
+    return e.Message
+}
+
+// Usage
+err := &MoleculerError{
+    Message: "Something happened",
+    Code:    501,
+    Type:    "ERR_SOMETHING",
+    Data:    map[string]interface{}{"a": 5, "nodeID": "node-666"},
+}
+return err
 ```
 
 ### `MoleculerRetryableError`

@@ -2,51 +2,58 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 Moleculer has a built-in validator module. It uses the [fastest-validator](https://github.com/icebob/fastest-validator) library.
 
 ## Built-in validator
 
-```js
-const { ServiceBroker } = require("moleculer");
+```go
+import (
+    "github.com/moleculer-go/moleculer"
+    "github.com/moleculer-go/moleculer/broker"
+)
 
-const broker = new ServiceBroker({
-    validation: true // Default is true
-});
+bkr := broker.New(&moleculer.Config{
+    Validation: true, // Default is true
+})
 
-broker.createService({
-    name: "say",
-    actions: {
-        hello: {
-            // Parameters definitions to validator
-            params: {
-                name: { type: "string", min: 2 }
+sayService := moleculer.ServiceSchema{
+    Name: "say",
+    Actions: []moleculer.Action{
+        {
+            Name: "hello",
+            // Parameters validation can be implemented in the handler
+            Handler: func(ctx moleculer.Context, params moleculer.Payload) interface{} {
+                name := params.Get("name").String()
+                if name == "" {
+                    return errors.New("The 'name' field is required!")
+                }
+                if len(name) < 2 {
+                    return errors.New("The 'name' field must be at least 2 characters!")
+                }
+                return "Hello " + name
             },
-            handler(ctx) {
-                return "Hello " + ctx.params.name;
-            }
-        }
-    }
-});
+        },
+    },
+}
 
-broker
-    .call("say.hello")
-    .then(console.log)
-    .catch(err => console.error(err.message));
-// -> throw ValidationError: "The 'name' field is required!"
+bkr.Publish(sayService)
+bkr.Start()
 
-broker
-    .call("say.hello", { name: 123 })
-    .then(console.log)
-    .catch(err => console.error(err.message));
-// -> throw ValidationError: "The 'name' field must be a string!"
+// This will return an error: "The 'name' field is required!"
+result := <-bkr.Call("say.hello", nil)
+if result.Error() != nil {
+    fmt.Println(result.Error().Error())
+}
+
+// This will return an error: "The 'name' field must be at least 2 characters!"
+result = <-bkr.Call("say.hello", moleculer.Payload{"name": "A"})
+if result.Error() != nil {
+    fmt.Println(result.Error().Error())
+}
 
 broker
     .call("say.hello", { name: "Walter" })

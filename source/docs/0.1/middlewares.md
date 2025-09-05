@@ -2,52 +2,39 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 
-For MVP we have the basics of MIddelwares working. We already use it for some internal core functions, but the API is not user-friendly yet. We will tackle this soon as we develop more plugins that require middlewares.
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+For MVP we have the basics of Middlewares working. We already use it for some internal core functions, but the API is not user-friendly yet. We will tackle this soon as we develop more plugins that require middlewares.
 {% endnote %}
 
 Moleculer supports middlewares. The middleware is an `Object` with hooks & wrapper functions. Wrap action handlers, event handlers, broker methods and hook lifecycle events.
 
 **All available methods:**
 
-```js
-const MyCustomMiddleware = {
-    // Wrap local action handlers (legacy middleware handler)
-    localAction(next, action) {
-        return function(ctx) {
-            // Change context properties or something
-            return next(ctx)
-                .then(res => {
-                    // Do something with the response
-                    return res;
-                })
-                .catch(err => {
-                    // Handle error or throw further
-                    throw err;
-                });
-        };
-    },
+```go
+type MyCustomMiddleware struct {
+    // Add any custom fields here
+}
 
-    // Wrap remote action calling
-    remoteAction(next, action) {
-        return function(ctx) {
-            // Change context properties or something
-            return next(ctx)
-                .then(res => {
-                    // Do something with the response
-                    return res;
-                })
-                .catch(err => {
-                    // Handle error or throw further
-                    throw err;
-                });
+// Wrap local action handlers
+func (m *MyCustomMiddleware) LocalAction(next func(moleculer.Context, moleculer.Payload) interface{}, action moleculer.Action) func(moleculer.Context, moleculer.Payload) interface{} {
+    return func(ctx moleculer.Context, params moleculer.Payload) interface{} {
+        // Change context properties or something
+        result := next(ctx, params)
+        // Do something with the response
+        return result
+    }
+}
+
+// Wrap remote action calling
+func (m *MyCustomMiddleware) RemoteAction(next func(moleculer.Context, moleculer.Payload) interface{}, action moleculer.Action) func(moleculer.Context, moleculer.Payload) interface{} {
+    return func(ctx moleculer.Context, params moleculer.Payload) interface{} {
+        // Change context properties or something
+        result := next(ctx, params)
+        // Do something with the response
+        return result
         };
     },
 

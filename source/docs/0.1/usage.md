@@ -4,13 +4,14 @@
 
 # Install Moleculer Go
 
-Moleculer can be installed with npm or yarn
+Moleculer can be installed with go get or go modules
 
 ```bash
 $ go get -u github.com/moleculer-go/moleculer
 
 # Or with go modules
-github.com/moleculer-go/moleculer v0.1.4
+go mod init my-project
+go get github.com/moleculer-go/moleculer
 ```
 
 # Create your first microservice
@@ -28,7 +29,7 @@ import (
  "github.com/moleculer-go/moleculer/payload"
 )
 
-var mathService = moleculer.Service{
+var mathService = moleculer.ServiceSchema{
  Name: "math",
  Actions: []moleculer.Action{
   {

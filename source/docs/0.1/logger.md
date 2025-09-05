@@ -2,13 +2,9 @@
 
 ---
 
-{% note info WIP Documentation %}
+{% note info Go Implementation %}
 
-<img src="assets/under_construction.png" width=150/>
-
-This documentation is still a working in progress and this page has not been fully converted yet :(
-
-We are working on top of the existing Moleculer JS documentation, and that is why you might see pages with some JavaScript :)
+This documentation has been updated to reflect the Go implementation of Moleculer. All examples are now in Go and show the actual API available in the Go version.
 {% endnote %}
 In Moleculer project every main module has a custom logger instance. They inherit it from the broker logger instance which you can set in the [broker options](broker.html#Broker-options).
 
@@ -20,25 +16,34 @@ The Moleculer has a built-in console logger. You can enable it with `logger: con
 
 **Built-in console logger:**
 
-```js
-let { ServiceBroker } = require("moleculer");
-let broker = new ServiceBroker({
-    logger: console,
-    logLevel: "info"
-});
+```go
+import (
+    "github.com/moleculer-go/moleculer"
+    "github.com/moleculer-go/moleculer/broker"
+)
 
-broker.createService({
-    name: "posts",
-    actions: {
-        get(ctx) {
-            this.logger.info("Log message via Service logger");
-        }
-    }
-});
+bkr := broker.New(&moleculer.Config{
+    LogLevel: "info",
+})
 
-broker
-    .call("posts.get")
-    .then(() => broker.logger.info("Log message via Broker logger"));
+postsService := moleculer.ServiceSchema{
+    Name: "posts",
+    Actions: []moleculer.Action{
+        {
+            Name: "get",
+            Handler: func(ctx moleculer.Context, params moleculer.Payload) interface{} {
+                ctx.Logger().Info("Log message via Service logger")
+                return nil
+            },
+        },
+    },
+}
+
+bkr.Publish(postsService)
+bkr.Start()
+
+result := <-bkr.Call("posts.get", nil)
+bkr.Logger().Info("Log message via Broker logger")
 ```
 
 **Console messages:**
